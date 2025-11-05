@@ -24,4 +24,6 @@ df1.to_csv("cannabis_recreatif_lemmatise_10.csv", index=False, sep=';', encoding
 #print(df.columns)
 print(df1.columns.tolist())
 
-print(df1[["Vous pouvez préciser votre réponse.", 'Vous pouvez préciser votre réponse..1','Quel(s) autre(s) avantage(s) verriez-vous à lassouplissement de la politique actuelle ?', 'Selon vous y aurait-il une ou plusieurs autres priorités budgétaires ?','Pour quelle(s) raison(s) ?','Y a-t-il une ou des raisons supplémentaires pour lesquelles vous vous opposez à sa dépénalisation ou sa légalisation ?','Vous pouvez déposer ici une contribution écrite. ']])
+df_ouvert = df[["Vous pouvez préciser votre réponse.", 'Vous pouvez préciser votre réponse..1','Quel(s) autre(s) avantage(s) verriez-vous à lassouplissement de la politique actuelle ?', 'Selon vous y aurait-il une ou plusieurs autres priorités budgétaires ?','Pour quelle(s) raison(s) ?','Y a-t-il une ou des raisons supplémentaires pour lesquelles vous vous opposez à sa dépénalisation ou sa légalisation ?','Vous pouvez déposer ici une contribution écrite. ']]
+
+print(df_ouvert)
