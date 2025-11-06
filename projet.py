@@ -2,6 +2,8 @@ import pandas as pd
 import scipy.stats as stat
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn
+
 
 df = pd.read_csv("cannabis_recreatif.csv", encoding="latin1", sep=';')
 df1 = df.head(10).copy()
@@ -46,4 +48,5 @@ for col in df_questions_ouvertes_lemmatise.columns:
 
     
 df_questions_ouvertes_lemmatise.to_csv("cannabis_recreatif_lemmatise.csv", index=False, sep=';', encoding='utf-8')
+
 
