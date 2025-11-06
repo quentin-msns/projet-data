@@ -41,6 +41,9 @@ df_questions_ouvertes_lemmatise=df_questions_ouvertes.copy()
 
 for col in df_questions_ouvertes_lemmatise.columns:
     df_questions_ouvertes_lemmatise[col] = df_questions_ouvertes_lemmatise[col].map(lemmatize_text)
+    # Supprime les lignes où toutes les colonnes sont vides (NaN)
+    df_questions_ouvertes_lemmatise = df_questions_ouvertes_lemmatise.dropna(how='all')
+
     
 df_questions_ouvertes_lemmatise.to_csv("cannabis_recreatif_lemmatise.csv", index=False, sep=';', encoding='utf-8')
 
