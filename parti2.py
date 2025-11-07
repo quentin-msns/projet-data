@@ -16,19 +16,20 @@ corpus = df['texte_complet'].tolist()
 # 3️⃣ Vectorisation avec CountVectorizer
 count_vectorizer = CountVectorizer()
 X_count = count_vectorizer.fit_transform(corpus)
-df_count = pd.DataFrame(X_count.toarray(), columns=count_vectorizer.get_feature_names_out())
+df_sparse = pd.DataFrame.sparse.from_spmatrix(X_count, columns=count_vectorizer.get_feature_names_out())
 
 print("=== Matrice CountVectorizer ===")
-print(df_count.head())
+print(df_sparse.head())
 
 # 4️⃣ Vectorisation avec TfidfVectorizer
 tfidf_vectorizer = TfidfVectorizer()
 X_tfidf = tfidf_vectorizer.fit_transform(corpus)
-df_tfidf = pd.DataFrame(X_tfidf.toarray(), columns=tfidf_vectorizer.get_feature_names_out())
-
+df_tfidf = pd.DataFrame.sparse.from_spmatrix(
+    X_tfidf, 
+    columns=tfidf_vectorizer.get_feature_names_out()
+)
 print("\n=== Matrice TF-IDF ===")
-print(df_tfidf.head().round(3))
-
+print(df_tfidf.head())
 # 5️⃣ (Optionnel) Top 15 mots les plus importants globalement
 word_importance = df_tfidf.sum(axis=0).sort_values(ascending=False).head(15)
 
