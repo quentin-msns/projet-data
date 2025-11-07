@@ -10,9 +10,21 @@ df['texte_complet'] = df.apply(
     lambda x: ' '.join(x.dropna().astype(str)), axis=1
 )
 df['texte_complet'] = df['texte_complet'].apply(lambda x: x.encode('latin1').decode('utf-8', errors='ignore') if isinstance(x, str) else x)
-
-# 2️⃣ Récupère le corpus (liste de textes)
 corpus = df['texte_complet'].tolist()
+# 2️⃣ Récupère le corpus (liste de textes)
+import re
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'\d+', '', text)
+    text = re.sub(r'\b\w{1,2}\b', '', text)  # mots de 1 ou 2 lettres
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+corpus = [clean_text(doc) for doc in corpus]
+
+
 
 # 3️⃣ Vectorisation avec CountVectorizer
 count_vectorizer = CountVectorizer(lowercase=True)
@@ -23,7 +35,7 @@ print("=== Matrice CountVectorizer ===")
 print(df_sparse.head())
 
 # 4️⃣ Vectorisation avec TfidfVectorizer
-tfidf_vectorizer = TfidfVectorizer( lowercase=True)
+tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=5,max_df=0.90)
 X_tfidf = tfidf_vectorizer.fit_transform(corpus)
 df_tfidf = pd.DataFrame.sparse.from_spmatrix(
     X_tfidf, 
