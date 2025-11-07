@@ -16,8 +16,13 @@ def lemmatize_text(text):
     if pd.isna(text):
         return text
     doc = nlp(text)
-    return " ".join([token.lemma_ for token in doc if not token.is_stop and not token.is_punct])
-
+    return " ".join([
+        token.lemma_.lower()
+        for token in doc
+        if not token.is_stop
+        and not token.is_punct
+    and token.is_alpha
+    ])
 
 
 df_questions_ouvertes = df[["Vous pouvez préciser votre réponse.", 'Vous pouvez préciser votre réponse..1','Quel(s) autre(s) avantage(s) verriez-vous à l\x92assouplissement de la politique actuelle ?',
