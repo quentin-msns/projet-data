@@ -3,18 +3,19 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("cannabis_recreatif_lemmatise.csv", encoding="latin1", sep=';')
+df = pd.read_csv("cannabis_recreatif_lemmatise.csv", encoding="utf-8", sep=';')
 
 # 1️⃣ Fusionne toutes les colonnes textuelles en un seul texte par ligne
 df['texte_complet'] = df.apply(
     lambda x: ' '.join(x.dropna().astype(str)), axis=1
 )
+df['texte_complet'] = df['texte_complet'].apply(lambda x: x.encode('latin1').decode('utf-8', errors='ignore') if isinstance(x, str) else x)
 
 # 2️⃣ Récupère le corpus (liste de textes)
 corpus = df['texte_complet'].tolist()
 
 # 3️⃣ Vectorisation avec CountVectorizer
-count_vectorizer = CountVectorizer()
+count_vectorizer = CountVectorizer(lowercase=True)
 X_count = count_vectorizer.fit_transform(corpus)
 df_sparse = pd.DataFrame.sparse.from_spmatrix(X_count, columns=count_vectorizer.get_feature_names_out())
 
@@ -22,7 +23,7 @@ print("=== Matrice CountVectorizer ===")
 print(df_sparse.head())
 
 # 4️⃣ Vectorisation avec TfidfVectorizer
-tfidf_vectorizer = TfidfVectorizer()
+tfidf_vectorizer = TfidfVectorizer( lowercase=True)
 X_tfidf = tfidf_vectorizer.fit_transform(corpus)
 df_tfidf = pd.DataFrame.sparse.from_spmatrix(
     X_tfidf, 
