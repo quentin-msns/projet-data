@@ -13,13 +13,15 @@ df['texte_complet'] = df['texte_complet'].apply(lambda x: x.encode('latin1').dec
 corpus = df['texte_complet'].tolist()
 # 2️⃣ Récupère le corpus (liste de textes)
 import re
-
 def clean_text(text):
-    text = text.lower()
-    text = re.sub(r'\d+', '', text)
-    text = re.sub(r'\b\w{1,2}\b', '', text)  # mots de 1 ou 2 lettres
-    text = re.sub(r'[^\w\s]', '', text)
-    text = re.sub(r'\s+', ' ', text).strip()
+    if not isinstance(text, str):
+        return ""
+    text = text.lower()  # mettre en minuscules
+    text = re.sub(r'\d+', '', text)  # supprimer les chiffres
+    text = re.sub(r'[^\w\s]', '', text)  # supprimer la ponctuation
+    # supprimer les mots de moins de 3 lettres
+    text = ' '.join([word for word in text.split() if len(word) >= 3])
+    text = re.sub(r'\s+', ' ', text).strip()  # nettoyer les espaces
     return text
 
 corpus = [clean_text(doc) for doc in corpus]
@@ -35,7 +37,7 @@ print("=== Matrice CountVectorizer ===")
 print(df_sparse.head())
 
 # 4️⃣ Vectorisation avec TfidfVectorizer
-tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=5,max_df=0.90)
+tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=5,max_df=0.80)
 X_tfidf = tfidf_vectorizer.fit_transform(corpus)
 df_tfidf = pd.DataFrame.sparse.from_spmatrix(
     X_tfidf, 
@@ -54,3 +56,26 @@ plt.ylabel("Score TF-IDF total")
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
+
+
+# similarité entre document
+def similarite(d1,d2):
+    produit_scalaire = d1.dot(d2)
+    norm_1 = np.sqrt((d1 ** 2).sum())
+    norm_2 = np.sqrt((d2 ** 2).sum())
+    if norm_1 == 0 or norm_2 == 0:  # éviter la division par zéro
+        return 0.0
+    return produit_scalaire/(norm_1*norm_2)
+
+d1 = df_tfidf.iloc[0]
+
+similarities = []
+
+for i in range(df_tfidf.shape[0]):
+    d2 = df_tfidf.iloc[i]
+    sim = similarite(d1, d2)
+    similarities.append(sim)
+
+# Mettre en DataFrame si tu veux
+df_sim = pd.DataFrame(similarities, columns=["sim_doc_0"])
+print(df_sim.head(10))
