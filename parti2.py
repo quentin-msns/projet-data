@@ -9,7 +9,7 @@ df = pd.read_csv("cannabis_recreatif_lemmatise.csv", encoding="utf-8", sep=';')
 df['texte_complet'] = df.apply(
     lambda x: ' '.join(x.dropna().astype(str)), axis=1
 )
-df['texte_complet'] = df['texte_complet'].apply(lambda x: x.encode('latin1').decode('utf-8', errors='ignore') if isinstance(x, str) else x)
+df['texte_complet'] = df['texte_complet'].apply(lambda x: x.encode('utf-8').decode('utf-8', errors='ignore') if isinstance(x, str) else x)
 corpus = df['texte_complet'].tolist()
 # 2️⃣ Récupère le corpus (liste de textes)
 import re
