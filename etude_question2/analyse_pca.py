@@ -20,10 +20,9 @@ print("Vecteurs propres shape :", vecs.shape)
 x = vecs[:, 0]
 y = vecs[:, 1]
 
-plt.figure(figsize=(8, 6))
-plt.scatter(x, y, s=2, alpha=0.8)
-plt.title("Cartographie spectrale basée sur la matrice de similarité")
-plt.xlabel("Composante 1")
-plt.ylabel("Composante 2")
+plt.figure(figsize=(10, 6))
+plt.scatter(x, y, s=5, alpha=0.8)
+plt.title("Cartographie basée sur la matrice de similarité des 500 plus longs documents")
+
 plt.show()
 
