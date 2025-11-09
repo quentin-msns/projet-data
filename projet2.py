@@ -3,6 +3,7 @@ import spacy
 import re
 
 # Chargement du modèle spaCy français (meilleur que le "sm")
+#nlp = spacy.load("fr_core_news_sm")
 # Si besoin, installe-le avec :
 #   python -m spacy download fr_core_news_md
 nlp = spacy.load("fr_core_news_md")

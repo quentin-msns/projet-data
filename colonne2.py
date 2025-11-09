@@ -35,7 +35,7 @@ df_questions_ouvertes.columns = [
 def clean_text(text: str) -> str:
     if pd.isna(text):
         return text
-    text = str(text).encode("latin1", errors="ignore").decode("latin1", errors="ignore")
+    text = str(text).encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
     text = text.lower()  # mettre en minuscules
     text = re.sub(r'\d+', '', text)  # supprimer les chiffres
     text = ' '.join([word for word in text.split() if len(word) >= 3]) # on garde les mots de 3 lettres et plus
@@ -57,17 +57,24 @@ def lemmatize_text(text: str) -> str:
     ]
     return " ".join(lemmas)
 
-# === 5️⃣ Application du nettoyage ===
-df_questions_ouvertes_lemmatise = df_questions_ouvertes.copy()
-df_questions_ouvertes_lemmatise = df_questions_ouvertes_lemmatise.map(clean_text)
 
-# === 6️⃣ Application de la lemmatisation seulement à la deuxième colonne ===
 col = "Pensez vous que le dispositif actuel permet de lutter efficacement contre les trafics"
 print(f"→ Lemmatisation de la colonne : {col}")
-df2 = df_questions_ouvertes_lemmatise[col].map(lemmatize_text)
+df2 = df_questions_ouvertes[col].map(lemmatize_text)
+df2 =df2.map(clean_text)
+# 1️⃣ Nettoyage de la série df2 (une seule colonne texte)
+df2 = df2.astype(str)  # tout en texte
+df2 = df2.map(clean_text)  # nettoyage
 
-# Supprime les lignes totalement vides
-df2 = df2.dropna(how="all")
+# 2️⃣ On supprime les lignes vides ou contenant uniquement des guillemets
+df2 = df2[df2.str.strip() != '']
+df2 = df2[df2.str.lower() != 'nan']
+
+# 3️⃣ On supprime les lignes avec moins de 5 mots
+df2 = df2[df2.str.split().apply(len) >= 5]
+
+# 4️⃣ Réinitialiser les index
+df2 = df2.reset_index(drop=True)
 # === 6️⃣ Sauvegarde du résultat ===
 df2.to_csv("question2.csv", index=False, sep=";", encoding="utf-8")
 print("\n✅ Fichier 'question2.csv' créé avec succès !")
