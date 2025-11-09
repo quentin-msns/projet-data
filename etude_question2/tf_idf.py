@@ -12,10 +12,10 @@ file_path = base_dir.parent / "data" / "donnees" / "question2_lemmatise2.csv"
 df = pd.read_csv(file_path, encoding="utf-8", sep=';')
 col_name = df.columns[0]
 taille  = 500
-# 1️⃣ Crée une nouvelle colonne avec le nombre de mots par ligne
+#crée une nouvelle colonne avec le nombre de mots par ligne
 df['word_count'] = df[col_name].astype(str).str.split().apply(len)
-df_sorted = df.sort_values(by='word_count', ascending=False)# 2️⃣ Trie par nombre de mots décroissant
-df_top10000 = df_sorted.head(taille).copy()# 3️⃣ Garde seulement les 100 lignes les plus longues
+df_sorted = df.sort_values(by='word_count', ascending=False)#trie par nombre de mots décroissant
+df_top10000 = df_sorted.head(taille).copy()#garde seulement les 100 lignes les plus longues
 df_top10000.drop(columns=['word_count'], inplace=True)# Supprime la colonne word_count 
 
 file_path = base_dir.parent / "data" / "donnees" / f"question2_lemmatise2_{taille}lignes.csv"
@@ -31,7 +31,7 @@ matrice_vector = pd.DataFrame.sparse.from_spmatrix(X_count, columns=count_vector
 print("=== Matrice CountVectorizer ===")
 print(matrice_vector.head())
 
-# 4️⃣ Vectorisation avec TfidfVectorizer
+#vectorisation avec TfidfVectorizer
 tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=5,max_df=0.80)
 X_tfidf = tfidf_vectorizer.fit_transform(corpus)
 df_tfidf = pd.DataFrame.sparse.from_spmatrix(
@@ -58,11 +58,11 @@ print("Nombre de lignes :", nb_lignes)
 
 
 
-# === Paramètres ===
+#paramètres
 n = nb_lignes  # taille de la matrice
 dtype = np.float32  # pour gagner de la place
 
-# === 1️⃣ Initialisation : matrice creuse au format COO (très pratique pour construire) ===
+#initialisation : matrice creuse au format COO (très pratique pour construire)
 rows = []
 cols = []
 values = []
@@ -88,13 +88,13 @@ for i in range(n):
                 cols.append(j)
                 values.append(sim)
 
-# === 2️⃣ Conversion en matrice creuse CSR (plus efficace pour calculs) ===
+#conversion en matrice creuse CSR
 sparse_matrix = sparse.csr_matrix((values, (rows, cols)), shape=(n, n), dtype=dtype)
 
 print(f"Nombre de valeurs non nulles : {sparse_matrix.nnz}")
 print(f"Taille approximative : {sparse_matrix.data.nbytes / 1e6:.2f} Mo")
 
-# === 3️⃣ Sauvegarde compressée ===
+#sauvegarde compressée
 file_path = base_dir.parent / "data" / "resultats" / f"matrice_similarite_q2_{taille}.npz"
 sparse.save_npz(f"matrice_similarite_q2_{taille}.npz", sparse_matrix)
 print("✅ Matrice sparse sauvegardée avec succès.")

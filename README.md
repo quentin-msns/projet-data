@@ -22,7 +22,7 @@ Ce projet contient plusieurs scripts et données pour l'analyse d'un questionnai
 
 ## Description des scripts
 
-### `colonne.py`
+### `colonne2.py`
 - Nettoie et lemmatise une colonne spécifique du questionnaire.
 - Supprime les mots de moins de 3 lettres et les chiffres.
 - Sauvegarde un CSV avec la colonne traitée.
