@@ -44,8 +44,8 @@ print(df_tfidf.head())
 # similarité entre document
 def similarite(d1,d2):
     produit_scalaire = d1.dot(d2)
-    norm_1 = np.sqrt((d1 ** 2).sum())
-    norm_2 = np.sqrt((d2 ** 2).sum())
+    norm_1 = np.sqrt(d1.dot(d1))
+    norm_2 = np.sqrt(d2.dot(d2))
     if norm_1 == 0 or norm_2 == 0:  # éviter la division par zéro
         return 0.0
     return produit_scalaire/(norm_1*norm_2)
