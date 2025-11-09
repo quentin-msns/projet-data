@@ -17,6 +17,10 @@ df['word_count'] = df[col_name].astype(str).str.split().apply(len)
 df_sorted = df.sort_values(by='word_count', ascending=False)# 2️⃣ Trie par nombre de mots décroissant
 df_top10000 = df_sorted.head(taille).copy()# 3️⃣ Garde seulement les 100 lignes les plus longues
 df_top10000.drop(columns=['word_count'], inplace=True)# Supprime la colonne word_count 
+
+file_path = base_dir.parent / "data" / "donnees" / f"question2_lemmatise2_{taille}lignes.csv"
+df_top10000.to_csv(file_path, sep=";", encoding="utf-8", index=False)
+print("fichier sauvegardé :", file_path)
 print(df_top10000)
 corpus = df_top10000["Pensez vous que le dispositif actuel permet de lutter efficacement contre les trafics"].astype(str).tolist()
 print(corpus[:5])

@@ -1,7 +1,10 @@
 from scipy import sparse
 from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
-M = sparse.load_npz("matrice_similarite_q2_500.npz") # on charge la matrice de similarité des 500 plus longues lignes
+from pathlib import Path
+base_dir = Path(__file__).resolve().parent
+file_path = base_dir.parent / "data" / "resultats" / "matrice_similarite_q2_500.npz"
+M = sparse.load_npz(file_path) # on charge la matrice de similarité des 500 plus longues lignes
 print(M.shape)
 print(f"{M.nnz} valeurs non nulles")
 

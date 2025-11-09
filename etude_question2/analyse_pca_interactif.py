@@ -3,9 +3,13 @@ import numpy as np
 import plotly.express as px
 from scipy import sparse
 from scipy.sparse.linalg import eigsh
+from pathlib import Path
+base_dir = Path(__file__).resolve().parent
 
+# Chemin vers le fichier (en remontant d’un dossier)
+file_path = base_dir.parent / "data" / "resultats" / "matrice_similarite_q2_500.npz"
 # Charger la matrice
-M = sparse.load_npz("data/resultats/matrice_similarite_q2_500.npz")
+M = sparse.load_npz(file_path)
 
 # Calcul des 2 premiers vecteurs propres
 vals, vecs = eigsh(M, k=2, which='LM')
@@ -13,8 +17,9 @@ vals, vecs = eigsh(M, k=2, which='LM')
 # Coords projetées
 coords = vecs[:, :2] * np.sqrt(vals[:2])
 
-# Charger le DataFrame des textes (ou les 500 plus longs que tu avais)
-df = pd.read_csv("data/donnees/question2.csv", sep=";", encoding="utf-8")
+# Charger le DataFrame des textes 
+file_path = base_dir.parent / "data" / "donnees" / "question2_lemmatise2_500lignes.csv"
+df = pd.read_csv(file_path, sep=";", encoding="utf-8")
 
 # Option : récupérer les 5 mots les plus fréquents pour chaque ligne
 def top_words(text, n=5):
@@ -39,7 +44,7 @@ fig = px.scatter(
     df_coords,
     x="x", y="y",
     hover_data={"texte": True, "top_words": True},
-    title="Cartographie des documents (2 vecteurs propres)",
+    title="Cartographie des document",
 )
 fig.update_traces(marker=dict(size=8, opacity=0.7))
 fig.show()
