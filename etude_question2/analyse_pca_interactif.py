@@ -43,8 +43,10 @@ df_coords = pd.DataFrame({
 fig = px.scatter(
     df_coords,
     x="x", y="y",
-    hover_data={"texte": True, "top_words": True},
-    title="Cartographie des document",
+    hover_data=["top_words"],
+    title="Cartographie des documents",
 )
 fig.update_traces(marker=dict(size=8, opacity=0.7))
+# Masquer les coordonnées x et y dans le tooltip
+fig.update_traces(hovertemplate='%{customdata}<extra></extra>')
 fig.show()
