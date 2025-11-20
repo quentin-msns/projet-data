@@ -2,16 +2,13 @@ import pandas as pd
 import spacy
 import re
 
-# Chargement du modèle spaCy français (meilleur que le "sm")
-#nlp = spacy.load("fr_core_news_sm")
-# Si besoin, installe-le avec :
-#   python -m spacy download fr_core_news_md
+# Chargement du modèle spaCy français 
 nlp = spacy.load("data/packages/fr_core_news_md")
 
-# === 1️⃣ Lecture du CSV brut ===
+#lecture du CSV brut 
 df = pd.read_csv("cannabis_recreatif.csv", encoding="latin1", sep=';')
 
-# === 2️⃣ Sélection des questions ouvertes ===
+#sélection des questions ouvertes
 df_questions_ouvertes = df[[
     "Vous pouvez préciser votre réponse.",
     "Vous pouvez préciser votre réponse..1",
@@ -21,7 +18,7 @@ df_questions_ouvertes = df[[
     "Y a-t-il une ou des raisons supplémentaires pour lesquelles vous vous opposez à sa dépénalisation ou sa légalisation ?"
 ]]
 
-# === 3️⃣ Renommage (on garde tes noms originaux exacts) ===
+#renommage
 df_questions_ouvertes.columns = [
     "Pensez vous que le dispositif actuel de répression de la consommation de cannabis permet d’en limiter l’ampleur",
     "Pensez vous que le dispositif actuel permet de lutter efficacement contre les trafics",
@@ -31,7 +28,7 @@ df_questions_ouvertes.columns = [
     "Y a-t-il une ou des raisons supplémentaires pour lesquelles vous vous opposez à sa dépénalisation ou sa légalisation"
 ]
 
-# === 4️⃣ Fonctions de nettoyage et lemmatisation ===
+#fonctions de nettoyage et lemmatisation 
 
 def clean_text(text: str) -> str:
     """Nettoie le texte avant la lemmatisation"""
@@ -56,16 +53,16 @@ def lemmatize_text(text: str) -> str:
     ]
     return " ".join(lemmas)
 
-# === 5️⃣ Application de la lemmatisation ===
+#application de la lemmatisation
 df_questions_ouvertes_lemmatise = df_questions_ouvertes.copy()
 
 for col in df_questions_ouvertes_lemmatise.columns:
     print(f"→ Lemmatisation de la colonne : {col}")
     df_questions_ouvertes_lemmatise[col] = df_questions_ouvertes_lemmatise[col].map(lemmatize_text)
 
-# Supprime les lignes totalement vides
+#supprime les lignes totalement vides
 df_questions_ouvertes_lemmatise = df_questions_ouvertes_lemmatise.dropna(how="all")
 
-# === 6️⃣ Sauvegarde du résultat ===
+#sauvegarde du résultat dans un csv
 df_questions_ouvertes_lemmatise.to_csv("cannabis_recreatif_lemmatise.csv", index=False, sep=";", encoding="utf-8")
 print("\n✅ Fichier 'cannabis_recreatif_lemmatise.csv' créé avec succès !")
