@@ -4,12 +4,16 @@ import plotly.express as px
 from scipy import sparse
 from scipy.sparse.linalg import eigsh
 from pathlib import Path
+from sqlalchemy import create_engine
 base_dir = Path(__file__).resolve().parent
 
-# Chemin vers le fichier (en remontant d’un dossier)
-file_path = base_dir.parent / "data" / "resultats" / "matrice_similarite_q2_500.npz"
-# Charger la matrice
-M = sparse.load_npz(file_path)
+# Connexion à la base de données
+db_path = base_dir / "question2.db"
+engine = create_engine(f'sqlite:///{db_path}')
+
+# Charger la matrice de similarité depuis la base de données
+df_matrix = pd.read_sql("SELECT * FROM similarity_matrix", engine)
+M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(500, 500))
 
 # Calcul des 2 premiers vecteurs propres
 vals, vecs = eigsh(M, k=2, which='LM')

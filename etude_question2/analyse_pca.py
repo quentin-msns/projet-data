@@ -2,9 +2,17 @@ from scipy import sparse
 from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
 from pathlib import Path
+from sqlalchemy import create_engine
+import pandas as pd
 base_dir = Path(__file__).resolve().parent
-file_path = base_dir.parent / "data" / "resultats" / "matrice_similarite_q2_500.npz"
-M = sparse.load_npz(file_path) # on charge la matrice de similarité des 500 plus longues lignes
+
+# Connexion à la base de données
+db_path = base_dir / "question2.db"
+engine = create_engine(f'sqlite:///{db_path}')
+
+# Charger la matrice de similarité depuis la base de données
+df_matrix = pd.read_sql("SELECT * FROM similarity_matrix", engine)
+M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(500, 500))
 print(M.shape)
 print(f"{M.nnz} valeurs non nulles")
 

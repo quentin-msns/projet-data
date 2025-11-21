@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from unidecode import unidecode
 import spacy
 from scipy import sparse
+from sqlalchemy import create_engine
 nlp = spacy.load("fr_core_news_sm")
 def lemmatize_text(text: str) -> str:
     """Renvoie le texte lemmatisé en français"""
@@ -32,6 +33,8 @@ df = pd.read_csv(file_path, encoding="utf-8", sep=';')
 df = df.map(lambda x: unidecode(str(x)) if isinstance(x, str) else x)
 df = df.map(lemmatize_text) 
 
-#on sauve le dataframe lemmatizé
-chemin_fichier = base_dir.parent / "data" / "donnees" / "question2_lemmatise2.csv"
-df.to_csv(chemin_fichier, sep=";", encoding="utf-8", index=False)
+# Sauvegarde dans la base de données
+db_path = base_dir / "question2.db"
+engine = create_engine(f'sqlite:///{db_path}')
+df.to_sql('lemmatized_texts', engine, if_exists='replace', index=False)
+print("DataFrame lemmatizé sauvegardé dans la base de données.")

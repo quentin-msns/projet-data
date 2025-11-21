@@ -3,24 +3,26 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from pathlib import Path
 from scipy import sparse
+from sqlalchemy import create_engine
 base_dir = Path(__file__).resolve().parent
 
-# Chemin vers le fichier (en remontant d’un dossier)
-file_path = base_dir.parent / "data" / "donnees" / "question2_lemmatise2.csv"
+# Connexion à la base de données
+db_path = base_dir / "question2.db"
+engine = create_engine(f'sqlite:///{db_path}')
 
-# Lecture du CSV
-df = pd.read_csv(file_path, encoding="utf-8", sep=';')
+# Lecture depuis la base de données
+df = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
 col_name = df.columns[0]
 taille  = 500
 #crée une nouvelle colonne avec le nombre de mots par ligne
 df['word_count'] = df[col_name].astype(str).str.split().apply(len)
 df_sorted = df.sort_values(by='word_count', ascending=False)#trie par nombre de mots décroissant
 df_top10000 = df_sorted.head(taille).copy()#garde seulement les 100 lignes les plus longues
-df_top10000.drop(columns=['word_count'], inplace=True)# Supprime la colonne word_count 
+df_top10000.drop(columns=['word_count'], inplace=True)# Supprime la colonne word_count
 
-file_path = base_dir.parent / "data" / "donnees" / f"question2_lemmatise2_{taille}lignes.csv"
-df_top10000.to_csv(file_path, sep=";", encoding="utf-8", index=False)
-print("fichier sauvegardé :", file_path)
+# Sauvegarde des top textes dans la base de données
+df_top10000.to_sql('top_texts', engine, if_exists='replace', index=False)
+print("Top textes sauvegardés dans la base de données.")
 print(df_top10000)
 corpus = df_top10000["Pensez vous que le dispositif actuel permet de lutter efficacement contre les trafics"].astype(str).tolist()
 print(corpus[:5])
@@ -94,7 +96,10 @@ sparse_matrix = sparse.csr_matrix((values, (rows, cols)), shape=(n, n), dtype=dt
 print(f"Nombre de valeurs non nulles : {sparse_matrix.nnz}")
 print(f"Taille approximative : {sparse_matrix.data.nbytes / 1e6:.2f} Mo")
 
-#sauvegarde compressée
-file_path = base_dir.parent / "data" / "resultats" / f"matrice_similarite_q2_{taille}.npz"
-sparse.save_npz(f"matrice_similarite_q2_{taille}.npz", sparse_matrix)
-print("✅ Matrice sparse sauvegardée avec succès.")
+# Sauvegarde de la matrice de similarité dans la base de données
+# Stocker les valeurs non nulles : row, col, value
+rows, cols = sparse_matrix.nonzero()
+values = sparse_matrix.data
+df_matrix = pd.DataFrame({'row': rows, 'col': cols, 'value': values})
+df_matrix.to_sql('similarity_matrix', engine, if_exists='replace', index=False)
+print("Matrice de similarité sauvegardée dans la base de données.")
