@@ -21,9 +21,13 @@ vals, vecs = eigsh(M, k=2, which='LM')
 # Coords projetées
 coords = vecs[:, :2] * np.sqrt(vals[:2])
 
-# Charger le DataFrame des textes 
-file_path = base_dir.parent / "data" / "donnees" / "question2_lemmatise2_500lignes.csv"
-df = pd.read_csv(file_path, sep=";", encoding="utf-8")
+# Charger le DataFrame des textes depuis la base de données (top 500 avec démographiques)
+df_lemmatized = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
+col_name = df_lemmatized.columns[0]
+df_lemmatized['word_count'] = df_lemmatized[col_name].astype(str).str.split().apply(len)
+df_sorted = df_lemmatized.sort_values(by='word_count', ascending=False)
+df_top500 = df_sorted.head(500).copy()
+df_top500.drop(columns=['word_count'], inplace=True)
 
 # Option : récupérer les 5 mots les plus fréquents pour chaque ligne
 def top_words(text, n=5):
@@ -33,24 +37,27 @@ def top_words(text, n=5):
     freq = pd.Series(words).value_counts().head(n).index
     return " ".join(freq)
 
-df["top_words"] = df.iloc[:, 0].apply(top_words)
+df_top500["top_words"] = df_top500[col_name].apply(top_words)
 
 # DataFrame des coordonnées
 df_coords = pd.DataFrame({
     "x": coords[:, 0],
     "y": coords[:, 1],
-    "texte": df.iloc[:, 0],
-    "top_words": df["top_words"]
+    "texte": df_top500[col_name],
+    "top_words": df_top500["top_words"],
+    "sexe": df_top500["sexe"],
+    "age": df_top500["age"],
+    "profession": df_top500["profession"]
 })
 
 # Graphique interactif
 fig = px.scatter(
     df_coords,
     x="x", y="y",
-    hover_data=["top_words"],
+    hover_data=["top_words", "sexe", "age", "profession"],
     title="Cartographie des documents",
 )
 fig.update_traces(marker=dict(size=8, opacity=0.7))
-# Masquer les coordonnées x et y dans le tooltip
-fig.update_traces(hovertemplate='%{customdata}<extra></extra>')
+# Personnaliser le tooltip avec des retours à la ligne
+fig.update_traces(hovertemplate='Top words: %{customdata[0]}<br>Sexe: %{customdata[1]}<br>Age: %{customdata[2]}<br>Profession: %{customdata[3]}<extra></extra>')
 fig.show()
