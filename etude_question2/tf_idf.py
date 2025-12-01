@@ -13,7 +13,7 @@ engine = create_engine(f'sqlite:///{db_path}')
 # Lecture depuis la base de données
 df = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
 col_name = df.columns[0]
-taille  = 500
+taille  = 750
 #crée une nouvelle colonne avec le nombre de mots par ligne
 df['word_count'] = df[col_name].astype(str).str.split().apply(len)
 df_sorted = df.sort_values(by='word_count', ascending=False)#trie par nombre de mots décroissant
