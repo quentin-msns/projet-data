@@ -34,7 +34,7 @@ print("=== Matrice CountVectorizer ===")
 print(matrice_vector.head())
 
 #vectorisation avec TfidfVectorizer
-tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=5,max_df=0.80)
+tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=10)
 X_tfidf = tfidf_vectorizer.fit_transform(corpus)
 df_tfidf = pd.DataFrame.sparse.from_spmatrix(
     X_tfidf, 
