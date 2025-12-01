@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 from pathlib import Path
 from sqlalchemy import create_engine
@@ -17,15 +16,6 @@ df_top = pd.read_sql("SELECT * FROM top_texts", engine)
 col_name = df_top.columns[0]
 corpus = df_top[col_name].astype(str).tolist()
 
-# Recompute TF-IDF (même paramètres que dans tf_idf.py)
-tfidf_vectorizer = TfidfVectorizer(lowercase=True, min_df=5, max_df=0.80)
-X_tfidf = tfidf_vectorizer.fit_transform(corpus)
-
-# Clustering K-Means (supposons k=5 clusters, ajustable)
-k = 5
-kmeans = KMeans(n_clusters=k, random_state=42)
-clusters = kmeans.fit_predict(X_tfidf)
-
 # Charger les composantes PCA depuis analyse_pca.py (vecteurs propres)
 from scipy import sparse
 df_matrix = pd.read_sql("SELECT * FROM similarity_matrix", engine)
@@ -34,6 +24,38 @@ from scipy.sparse.linalg import eigsh
 vals, vecs = eigsh(M, k=2, which='LM')
 x = vecs[:, 0]
 y = vecs[:, 1]
+
+# Prepare PCA data for clustering
+X_pca = np.column_stack((x, y))
+
+# Custom K-Means implementation
+def kmeans_custom(X, k, random_state=42):
+    np.random.seed(random_state)
+    n_samples, n_features = X.shape
+    # Initialize centroids by randomly selecting k points
+    centroids_indices = np.random.choice(n_samples, k, replace=False)
+    centroids = X[centroids_indices].copy()
+    
+    max_iter = 100
+    tol = 1e-4
+    for _ in range(max_iter):
+        # Assign each point to the closest centroid
+        distances = np.linalg.norm(X[:, np.newaxis] - centroids, axis=2)
+        clusters = np.argmin(distances, axis=1)
+        
+        # Update centroids
+        new_centroids = np.array([X[clusters == i].mean(axis=0) for i in range(k)])
+        
+        # Check for convergence
+        if np.all(np.linalg.norm(new_centroids - centroids, axis=1) < tol):
+            break
+        centroids = new_centroids
+    
+    return clusters, centroids
+
+# Clustering K-Means on PCA data (supposons k=5 clusters, ajustable)
+k = 5
+clusters, centroids = kmeans_custom(X_pca, k, random_state=42)
 
 # Visualisation avec couleurs par cluster
 plt.figure(figsize=(10, 6))
