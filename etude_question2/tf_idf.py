@@ -13,19 +13,10 @@ engine = create_engine(f'sqlite:///{db_path}')
 # Lecture depuis la base de données
 df = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
 col_name = df.columns[0]
+print(col_name)
 taille  = 750
-#crée une nouvelle colonne avec le nombre de mots par ligne
-df['word_count'] = df[col_name].astype(str).str.split().apply(len)
-df_sorted = df.sort_values(by='word_count', ascending=False)#trie par nombre de mots décroissant
-df_top10000 = df_sorted.head(taille).copy()#garde seulement les 100 lignes les plus longues
-df_top10000.drop(columns=['word_count'], inplace=True)# Supprime la colonne word_count
-
-# Sauvegarde des top textes dans la base de données
-df_top10000.to_sql('top_texts', engine, if_exists='replace', index=False)
-print("Top textes sauvegardés dans la base de données.")
-print(df_top10000)
-corpus = df_top10000["Pensez vous que le dispositif actuel permet de lutter efficacement contre les trafics"].astype(str).tolist()
-print(corpus[:5])
+corpus = df[col_name]
+print(corpus.head())
 #Vectorisation avec CountVectorizer
 count_vectorizer = CountVectorizer(lowercase=True)
 X_count = count_vectorizer.fit_transform(corpus)
