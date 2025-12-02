@@ -18,6 +18,11 @@ M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col']))
 # Calcul des 2 premiers vecteurs propres
 vals, vecs = eigsh(M, k=2, which='LM')
 
+# Normalisation du signe des vecteurs propres pour un résultat identique partout
+for i in range(vecs.shape[1]):
+    if vecs[0, i] < 0:       # si la première valeur du vecteur propre est négative
+        vecs[:, i] *= -1     # on change le signe (flip)
+
 # Coords projetées
 coords = vecs[:, :2] * np.sqrt(vals[:2])
 
