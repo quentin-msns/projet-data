@@ -39,7 +39,7 @@ df["reponse_clean"] = df["response"].astype(str).map(unidecode)
 df["reponse_lem"] = df["reponse_clean"].map(lemmatize_text)
 
 # --- Préparation du tableau final ---
-df_sql = df[["response", "reponse_clean", "reponse_lem", "sexe", "age", "profession"]]
+df_sql = df[["reponse_lem", "sexe", "age", "profession"]]
 
 # --- Sauvegarde dans une nouvelle table SQL ---
 db_path = base_dir / "question2.db"
