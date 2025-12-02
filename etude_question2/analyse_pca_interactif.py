@@ -59,6 +59,7 @@ df_coords = pd.DataFrame({
 fig = px.scatter(
     df_coords,
     x="x", y="y",
+    color="sexe",
     hover_data=["top_words", "sexe", "age", "profession"],
     title="Cartographie des documents",
 )
