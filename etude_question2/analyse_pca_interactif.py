@@ -6,14 +6,14 @@ from scipy.sparse.linalg import eigsh
 from pathlib import Path
 from sqlalchemy import create_engine
 base_dir = Path(__file__).resolve().parent
-
+n=750
 # Connexion à la base de données
 db_path = base_dir / "question2.db"
 engine = create_engine(f'sqlite:///{db_path}')
 
 # Charger la matrice de similarité depuis la base de données
 df_matrix = pd.read_sql("SELECT * FROM similarity_matrix", engine)
-M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(500, 500))
+M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(n, n))
 
 # Calcul des 2 premiers vecteurs propres
 vals, vecs = eigsh(M, k=2, which='LM')
@@ -31,7 +31,7 @@ df_lemmatized = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
 col_name = df_lemmatized.columns[0]
 df_lemmatized['word_count'] = df_lemmatized[col_name].astype(str).str.split().apply(len)
 df_sorted = df_lemmatized.sort_values(by='word_count', ascending=False)
-df_top500 = df_sorted.head(500).copy()
+df_top500 = df_sorted.head(n).copy()
 df_top500.drop(columns=['word_count'], inplace=True)
 
 # Option : récupérer les 5 mots les plus fréquents pour chaque ligne
