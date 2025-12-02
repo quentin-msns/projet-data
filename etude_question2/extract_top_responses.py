@@ -36,6 +36,6 @@ db_path = Path("question2.db")
 engine = create_engine(f'sqlite:///{db_path}')
 
 # Sauvegarde dans la table 'texte_brut'
-df_top500.to_sql('texte_brut', engine, if_exists='replace', index=False)
+df_top500.to_csv('etude_question2/top_responses.csv', index=False, encoding='utf-8', sep=';')
 
 print(f"Les {N} réponses les plus longues ont été sauvegardées dans la table 'texte_brut' de question2.db.")
