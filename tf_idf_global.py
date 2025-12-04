@@ -1,43 +1,31 @@
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-import matplotlib.pyplot as plt
+from pathlib import Path
+from scipy import sparse
+from sqlalchemy import create_engine
+base_dir = Path(__file__).resolve().parent
 
-df = pd.read_csv("cannabis_recreatif_lemmatise.csv", encoding="utf-8", sep=';')
+# Connexion à la base de données
+db_path = "cannabis.db"
+engine = create_engine(f'sqlite:///{db_path}')
 
-#fusionne toutes les colonnes textuelles en un seul texte par ligne
-df['texte_complet'] = df.apply(
-    lambda x: ' '.join(x.dropna().astype(str)), axis=1
-)
-df['texte_complet'] = df['texte_complet'].apply(lambda x: x.encode('utf-8').decode('utf-8', errors='ignore') if isinstance(x, str) else x)
-corpus = df['texte_complet'].tolist()
-#récupère le corpus (liste de textes)
-import re
-def clean_text(text):
-    if not isinstance(text, str):
-        return ""
-    text = text.lower()  # mettre en minuscules
-    text = re.sub(r'\d+', '', text)  # supprimer les chiffres
-    text = re.sub(r'[^\w\s]', '', text)  # supprimer la ponctuation
-    # supprimer les mots de moins de 3 lettres
-    text = ' '.join([word for word in text.split() if len(word) >= 3])
-    text = re.sub(r'\s+', ' ', text).strip()  # nettoyer les espaces
-    return text
-
-corpus = [clean_text(doc) for doc in corpus]
-
-
-
-#vectorisation avec CountVectorizer
+# Lecture depuis la base de données
+df = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
+col_name = df.columns[0]
+print(col_name)
+taille  = 500
+corpus = df[col_name]
+print(corpus.head())
+#Vectorisation avec CountVectorizer
 count_vectorizer = CountVectorizer(lowercase=True)
 X_count = count_vectorizer.fit_transform(corpus)
-df_sparse = pd.DataFrame.sparse.from_spmatrix(X_count, columns=count_vectorizer.get_feature_names_out())
-
+matrice_vector = pd.DataFrame.sparse.from_spmatrix(X_count, columns=count_vectorizer.get_feature_names_out())
 print("=== Matrice CountVectorizer ===")
-print(df_sparse.head())
+print(matrice_vector.head())
 
 #vectorisation avec TfidfVectorizer
-tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=5,max_df=0.80)
+tfidf_vectorizer = TfidfVectorizer( lowercase=True,min_df=0.01,max_df=0.95)
 X_tfidf = tfidf_vectorizer.fit_transform(corpus)
 df_tfidf = pd.DataFrame.sparse.from_spmatrix(
     X_tfidf, 
@@ -45,14 +33,64 @@ df_tfidf = pd.DataFrame.sparse.from_spmatrix(
 )
 print("\n=== Matrice TF-IDF ===")
 print(df_tfidf.head())
-#top 15 mots les plus importants globalement
-word_importance = df_tfidf.sum(axis=0).sort_values(ascending=False).head(15)
 
-plt.figure(figsize=(10,5))
-word_importance.plot(kind='bar')
-plt.title("Top 15 mots les plus importants (TF-IDF global)")
-plt.xlabel("Mot")
-plt.ylabel("Score TF-IDF total")
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
+# similarité entre document
+def similarite(d1,d2):
+    produit_scalaire = d1.dot(d2)
+    norm_1 = np.sqrt(d1.dot(d1))
+    norm_2 = np.sqrt(d2.dot(d2))
+    if norm_1 == 0 or norm_2 == 0:  # éviter la division par zéro
+        return 0.0
+    return produit_scalaire/(norm_1*norm_2)
+
+matrice_similarite =[]
+
+# Nombre de lignes
+nb_lignes = df_tfidf.shape[0]
+print("Nombre de lignes :", nb_lignes)
+
+
+
+#paramètres
+n = nb_lignes  # taille de la matrice
+dtype = np.float32  # pour gagner de la place
+
+#initialisation : matrice creuse au format COO (très pratique pour construire)
+rows = []
+cols = []
+values = []
+
+# on remplit le triangle inférieur (sans diagonale)
+for i in range(n):
+    if i%10 ==0:
+        print(i/n *100,"%") 
+    for j in range(i+1):  # triangle inférieur
+        
+        if i == j: #1 sur la diagonale
+            rows.append(i)
+            cols.append(j)
+            values.append(1)
+        else:
+            d1 = df_tfidf.iloc[i]
+            d2 = df_tfidf.iloc[j]
+            sim = similarite(d1, d2)
+            sim = round(sim, 2)  # arrondi à 2 décimales
+            
+            if sim != 0:
+                rows.append(i)
+                cols.append(j)
+                values.append(sim)
+
+#conversion en matrice creuse CSR
+sparse_matrix = sparse.csr_matrix((values, (rows, cols)), shape=(n, n), dtype=dtype)
+
+print(f"Nombre de valeurs non nulles : {sparse_matrix.nnz}")
+print(f"Taille approximative : {sparse_matrix.data.nbytes / 1e6:.2f} Mo")
+
+# Sauvegarde de la matrice de similarité dans la base de données
+# Stocker les valeurs non nulles : row, col, value
+rows, cols = sparse_matrix.nonzero()
+values = sparse_matrix.data
+df_matrix = pd.DataFrame({'row': rows, 'col': cols, 'value': values})
+df_matrix.to_sql('similarity_matrix', engine, if_exists='replace', index=False)
+print("Matrice de similarité sauvegardée dans la base de données.")
