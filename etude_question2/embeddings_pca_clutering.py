@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import numpy as np
 from sklearn.decomposition import PCA
+import plotly.express as px
 from pathlib import Path
 from sqlalchemy import create_engine
 import matplotlib.pyplot as plt
@@ -30,12 +31,25 @@ print("Explained variance ratio:", pca.explained_variance_ratio_)
 print("Cluster sizes:")
 print(df["cluster"].value_counts())
 
-# Visualisation
-plt.figure(figsize=(10, 8))
-scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=df["cluster"], cmap='viridis', alpha=0.7)
-plt.colorbar(scatter, label='Cluster')
-plt.title('PCA Clustering Results')
-plt.xlabel('PC1')
-plt.ylabel('PC2')
-plt.savefig(base_dir / "clustering_plot.png")
-plt.show()
+# DataFrame pour la visualisation
+df_coords = pd.DataFrame({
+    "x": X_pca[:, 0],
+    "y": X_pca[:, 1],
+    "cluster": df["cluster"],
+    "sexe": df["sexe"],
+    "age": df["age"],
+    "profession": df["profession"]
+})
+
+# Visualisation interactive
+fig = px.scatter(
+    df_coords,
+    x="x", y="y",
+    color="cluster",
+    hover_data=["sexe", "age", "profession"],
+    title="PCA Clustering Results",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7))
+# Personnaliser le tooltip
+fig.update_traces(hovertemplate='Sexe: %{customdata[0]}<br>Age: %{customdata[1]}<br>Profession: %{customdata[2]}<extra></extra>')
+fig.show()

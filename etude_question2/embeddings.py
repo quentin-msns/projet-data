@@ -26,7 +26,7 @@ emb = model.encode(df["reponse_lem"].tolist()).tolist()
 # Convertir en JSON pour SQL
 df["embedding"] = [json.dumps(v) for v in emb]
 
-# Sauver une nouvelle table
-df.to_sql("embeddings_q2", engine, if_exists="replace", index=False)
+# Sauver une nouvelle table avec les colonnes nécessaires
+df[['reponse_lem', 'sexe', 'age', 'profession', 'embedding']].to_sql("embeddings_q2", engine, if_exists="replace", index=False)
 
-print("✔️ Table SQL 'embeddings_q2' créée (avec embeddings SentenceTransformer).")
+print("✔️ Table SQL 'embeddings_q2' créée (avec embeddings SentenceTransformer et données démographiques).")
