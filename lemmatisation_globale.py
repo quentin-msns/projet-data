@@ -1,50 +1,29 @@
 import pandas as pd
+from pathlib import Path
+from unidecode import unidecode
 import spacy
-import re
+from sqlalchemy import create_engine
+from collections import Counter
 
-# Chargement du modèle spaCy français 
-nlp = spacy.load("data/packages/fr_core_news_md")
+# Charger Spacy FR
+nlp = spacy.load("fr_core_news_sm")
 
-#lecture du CSV brut 
-df = pd.read_csv("cannabis_recreatif.csv", encoding="latin1", sep=';')
-
-#sélection des questions ouvertes
-df_questions_ouvertes = df[[
-    "Vous pouvez préciser votre réponse.",
-    "Vous pouvez préciser votre réponse..1",
-    "Quel(s) autre(s) avantage(s) verriez-vous à l\x92assouplissement de la politique actuelle ?",
-    "Selon vous y aurait-il une ou plusieurs autres priorités budgétaires ?",
-    "Pour quelle(s) raison(s) ?",
-    "Y a-t-il une ou des raisons supplémentaires pour lesquelles vous vous opposez à sa dépénalisation ou sa légalisation ?"
-]]
-
-#renommage
-df_questions_ouvertes.columns = [
-    "Pensez vous que le dispositif actuel de répression de la consommation de cannabis permet d’en limiter l’ampleur",
-    "Pensez vous que le dispositif actuel permet de lutter efficacement contre les trafics",
-    "Quels autres avantages verriez vous à l’assouplissement de la politique actuelle",
-    "Selon vous y aurait-il une ou plusieurs autres priorités budgétaires",
-    "Pour quelles raisons En cas de légalisation ou de dépénalisation, seriez vous favorable à la possibilité pour les particuliers de cultiver à des fins personnelles un nombre de pieds de cannabis fixé par la loi",
-    "Y a-t-il une ou des raisons supplémentaires pour lesquelles vous vous opposez à sa dépénalisation ou sa légalisation"
-]
-
-#fonctions de nettoyage et lemmatisation 
-
-def clean_text(text: str) -> str:
-    """Nettoie le texte avant la lemmatisation"""
-    if pd.isna(text):
+def clean_common_words(text: str) -> str:
+    """Enlève les mots usuels et les retours à la ligne de la colonne response"""
+    if pd.isna(text) or not isinstance(text, str):
         return text
-    text = str(text).encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
-    # Supprime tout caractère non alphabétique
-    text = re.sub(r"[^a-zA-ZÀ-ÿ\s-]", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+    # Enlever les retours à la ligne
+    text = text.replace('\n', ' ').replace('\r', ' ')
+    # Liste des mots usuels à enlever
+    common_words = ['un', 'le', 'la', 'les', 'de', 'du', 'des', 'et', 'à', 'a', 'en', 'sur', 'dans', 'par', 'pour', 'avec', 'sans', 'sous', 'entre', 'contre', 'chez', 'vers', 'pendant', 'depuis', 'jusque', 'malgré', 'quoique', 'bien', 'que', 'qui', 'quoi', 'dont', 'où', 'lequel', 'laquelle', 'lesquels', 'lesquelles', 'ce', 'cet', 'cette', 'ces', 'mon', 'ton', 'son', 'notre', 'votre', 'leur', 'ma', 'ta', 'sa', 'mes', 'tes', 'ses', 'nos', 'vos', 'leurs', 'je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles', 'me', 'te', 'se', 'nous', 'vous', 'le', 'la', 'les', 'lui', 'leur', 'y', 'en', 'moi', 'toi', 'soi', 'nous', 'vous', 'eux', 'elles', 'même', 'mêmes', 'tel', 'telle', 'tels', 'telles', 'tout', 'toute', 'tous', 'toutes', 'autre', 'autres', 'même', 'mêmes', 'quel', 'quelle', 'quels', 'quelles', 'tel', 'telle', 'tels', 'telles', 'combien', 'comment', 'où', 'quand', 'pourquoi', 'comment', 'si', 'oui', 'non', 'peut-être', 'peut', 'être', 'avoir', 'être', 'faire', 'aller', 'venir', 'voir', 'savoir', 'pouvoir', 'devoir', 'vouloir', 'falloir', 'mettre', 'prendre', 'donner', 'dire', 'venir', 'partir', 'arriver', 'passer', 'rester', 'tomber', 'tenir', 'porter', 'entrer', 'sortir', 'parler', 'écouter', 'regarder', 'chercher', 'trouver', 'perdre', 'gagner', 'jouer', 'chanter', 'danser', 'lire', 'écrire', 'dessiner', 'peindre', 'courir', 'marcher', 'nager', 'voler', 'manger', 'boire', 'dormir', 'réveiller', 'habiter', 'travailler', 'étudier', 'apprendre', 'enseigner', 'connaître', 'comprendre', 'penser', 'croire', 'aimer', 'détester', 'préférer', 'vouloir', 'pouvoir', 'devoir', 'falloir', 'mettre', 'prendre', 'donner', 'dire', 'venir', 'partir', 'arriver', 'passer', 'rester', 'tomber', 'tenir', 'porter', 'entrer', 'sortir', 'parler', 'écouter', 'regarder', 'chercher', 'trouver', 'perdre', 'gagner', 'jouer', 'chanter', 'danser', 'lire', 'écrire', 'dessiner', 'peindre', 'courir', 'marcher', 'nager', 'voler', 'manger', 'boire', 'dormir', 'réveiller', 'habiter', 'travailler', 'étudier', 'apprendre', 'enseigner', 'connaître', 'comprendre', 'penser', 'croire', 'aimer', 'détester', 'préférer']
+    words = text.split()
+    filtered_words = [word for word in words if word.lower() not in common_words]
+    return ' '.join(filtered_words)
 
 def lemmatize_text(text: str) -> str:
     """Renvoie le texte lemmatisé en français"""
     if pd.isna(text) or not isinstance(text, str):
         return text
-    text = clean_text(text)
     doc = nlp(text)
     lemmas = [
         token.lemma_.lower()
@@ -53,16 +32,54 @@ def lemmatize_text(text: str) -> str:
     ]
     return " ".join(lemmas)
 
-#application de la lemmatisation
-df_questions_ouvertes_lemmatise = df_questions_ouvertes.copy()
 
-for col in df_questions_ouvertes_lemmatise.columns:
-    print(f"→ Lemmatisation de la colonne : {col}")
-    df_questions_ouvertes_lemmatise[col] = df_questions_ouvertes_lemmatise[col].map(lemmatize_text)
 
-#supprime les lignes totalement vides
-df_questions_ouvertes_lemmatise = df_questions_ouvertes_lemmatise.dropna(how="all")
+file_path = Path(__file__).resolve().parent / "top_responses.csv"
 
-#sauvegarde du résultat dans un csv
-df_questions_ouvertes_lemmatise.to_csv("cannabis_recreatif_lemmatise.csv", index=False, sep=";", encoding="utf-8")
-print("\n✅ Fichier 'cannabis_recreatif_lemmatise.csv' créé avec succès !")
+df = pd.read_csv(file_path, encoding="utf-8", sep=';')
+
+# Assurer que les colonnes existent
+expected_cols = ['response', 'sexe', 'age', 'profession']
+missing = [c for c in expected_cols if c not in df.columns]
+if missing:
+    raise ValueError(f"Colonnes manquantes dans le CSV: {missing}")
+
+# --- Nettoyage des mots usuels et retours à la ligne ---
+df["response_clean"] = df["response"].astype(str).map(clean_common_words)
+
+# --- Nettoyage des accents uniquement sur la colonne texte ---
+df["reponse_clean"] = df["response_clean"].astype(str).map(unidecode)
+
+# --- Comptage des mots et suppression du top n% ---
+def remove_top_n_percent_words(text: str, n: float) -> str:
+    """Enlève les mots du top n% les plus fréquents"""
+    if pd.isna(text) or not isinstance(text, str):
+        return text
+    all_words = []
+    for t in df["reponse_clean"]:
+        if isinstance(t, str):
+            all_words.extend(t.split())
+    word_counts = Counter(all_words)
+    total_unique_words = len(word_counts)
+    top_n_percent_count = int(total_unique_words * (n / 100))
+    top_n_percent_words = set([word for word, _ in word_counts.most_common(top_n_percent_count)])
+    words = text.split()
+    filtered_words = [word for word in words if word not in top_n_percent_words]
+    return ' '.join(filtered_words)
+
+# Utiliser n=10 pour 10%
+df["reponse_clean"] = df["reponse_clean"].map(lambda x: remove_top_n_percent_words(x, 10))
+
+# --- Lemmatisation ---
+df["reponse_lem"] = df["reponse_clean"].map(lemmatize_text)
+
+# --- Préparation du tableau final ---
+df_sql = df[["reponse_lem", "sexe", "age", "profession"]]
+
+# --- Sauvegarde dans une nouvelle table SQL ---
+db_path = "cannabis.db"
+engine = create_engine(f"sqlite:///{db_path}")
+
+df_sql.to_sql("lemmatized_texts", engine, if_exists="replace", index=False)
+
+print("Table 'lemmatized_texts' sauvegardée correctement dans cannabis.db")
