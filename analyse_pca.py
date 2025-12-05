@@ -1,102 +1,69 @@
-import sqlite3
 import pandas as pd
 import numpy as np
-from scipy.sparse import csr_matrix
-from sklearn.feature_extraction.text import TfidfVectorizer
-from scipy.spatial.distance import cosine
+import plotly.express as px
+from scipy import sparse
 from scipy.sparse.linalg import eigsh
 from pathlib import Path
-
-# -------------------------------------------------------------
-# 1) Connexion à SQLite
-# -------------------------------------------------------------
+from sqlalchemy import create_engine
 base_dir = Path(__file__).resolve().parent
-db_path = base_dir/ "data" /"cannabis.db"
-conn = sqlite3.connect(db_path)
+n=500
+# Connexion à la base de données
+db_path = base_dir / "cannabis.db"
+engine = create_engine(f'sqlite:///{db_path}')
 
-print("✔️ Connexion OK")
+# Charger la matrice de similarité depuis la base de données
+df_matrix = pd.read_sql("SELECT * FROM similarity_matrix", engine)
+M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(n, n))
 
-# -------------------------------------------------------------
-# 2) Récupérer les textes lemmatisés
-# -------------------------------------------------------------
-df = pd.read_sql_query("""
-    SELECT id, full_text
-    FROM questions_lemmatisees_top1000
-    ORDER BY id
-""", conn)
-df['id'] = range(1, len(df) + 1)
-df.to_sql('questions_lemmatisees_top1000', conn, if_exists='replace', index=False)
+# Calcul des 2 premiers vecteurs propres
+vals, vecs = eigsh(M, k=2, which='LM')
 
-texts = df["full_text"].fillna("").tolist()
+# Normalisation du signe des vecteurs propres pour un résultat identique partout
+for i in range(vecs.shape[1]):
+    if vecs[0, i] < 0:       # si la première valeur du vecteur propre est négative
+        vecs[:, i] *= -1     # on change le signe (flip)
 
-print(f"✔️ {len(texts)} textes chargés")
-
-# -------------------------------------------------------------
-# 3) TF-IDF
-# -------------------------------------------------------------
-vectorizer = TfidfVectorizer(min_df=2)
-tfidf = vectorizer.fit_transform(texts)
-
-print("✔️ TF-IDF calculé :", tfidf.shape)
-
-# -------------------------------------------------------------
-# 4) Matrice de similarité cosinus
-# -------------------------------------------------------------
-# produit matriciel (plus rapide)
-similarity = (tfidf @ tfidf.T).toarray()
-
-print("✔️ Matrice de similarité créée :", similarity.shape)
-
-# -------------------------------------------------------------
-# 5) Sauvegarde dans SQLite
-#  → format long : (i, j, value)
-# -------------------------------------------------------------
-similarity_df = pd.DataFrame([
-    (i, j, similarity[i, j])
-    for i in range(similarity.shape[0])
-    for j in range(similarity.shape[1])
-], columns=["i", "j", "value"])
-
-similarity_df.to_sql("matrice_q2", conn, if_exists="replace", index=False)
-
-print("✔️ Matrice enregistrée dans TABLE 'matrice_q2'")
-
-# -------------------------------------------------------------
-# 6) ACP = valeurs propres (2 premières)
-# -------------------------------------------------------------
-# convertir en matrice creuse pour eigsh
-M = csr_matrix(similarity)
-
-vals, vecs = eigsh(M, k=2, which="LM")
-
+# Coords projetées
 coords = vecs[:, :2] * np.sqrt(vals[:2])
 
-print("✔️ PCA calculée")
+# Charger le DataFrame des textes depuis la base de données (top 500 avec démographiques)
+df_lemmatized = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
+col_name = df_lemmatized.columns[0]
+df_lemmatized['word_count'] = df_lemmatized[col_name].astype(str).str.split().apply(len)
+df_sorted = df_lemmatized.sort_values(by='word_count', ascending=False)
+df_top500 = df_sorted.head(n).copy()
+df_top500.drop(columns=['word_count'], inplace=True)
 
-# -------------------------------------------------------------
-# 7) Extraire les mots fréquents
-# -------------------------------------------------------------
+# Option : récupérer les 5 mots les plus fréquents pour chaque ligne
 def top_words(text, n=5):
-    words = text.split()
-    if len(words) == 0:
+    if not isinstance(text, str):
         return ""
+    words = text.split()
     freq = pd.Series(words).value_counts().head(n).index
     return " ".join(freq)
 
-df["top_words"] = df["full_text"].apply(top_words)
+df_top500["top_words"] = df_top500[col_name].apply(top_words)
 
-# -------------------------------------------------------------
-# 8) Sauvegarde PCA dans SQL
-# -------------------------------------------------------------
-df_pca = pd.DataFrame({
-    "id": df["id"],
+# DataFrame des coordonnées
+df_coords = pd.DataFrame({
     "x": coords[:, 0],
     "y": coords[:, 1],
-    "top_words": df["top_words"]
+    "texte": df_top500[col_name],
+    "top_words": df_top500["top_words"],
+    "sexe": df_top500["sexe"],
+    "age": df_top500["age"],
+    "profession": df_top500["profession"]
 })
 
-df_pca.to_sql("pca_q2", conn, if_exists="replace", index=False)
-
-print("🎉 PCA enregistrée dans 'pca_q2' !")
-
-conn.close()
+# Graphique interactif
+fig = px.scatter(
+    df_coords,
+    x="x", y="y",
+    color="sexe",
+    hover_data=["top_words", "sexe", "age", "profession"],
+    title="Cartographie des documents",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7))
+# Personnaliser le tooltip avec des retours à la ligne
+fig.update_traces(hovertemplate='Top words: %{customdata[0]}<br>Sexe: %{customdata[1]}<br>Age: %{customdata[2]}<br>Profession: %{customdata[3]}<extra></extra>')
+fig.show()
