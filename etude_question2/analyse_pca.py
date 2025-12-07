@@ -12,7 +12,7 @@ engine = create_engine(f'sqlite:///{db_path}')
 
 # Charger la matrice de similarité depuis la base de données
 df_matrix = pd.read_sql("SELECT * FROM similarity_matrix", engine)
-M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(500, 500))
+M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(750, 750))
 print(M.shape)
 print(f"{M.nnz} valeurs non nulles")
 
@@ -29,8 +29,8 @@ x = vecs[:, 0]
 y = vecs[:, 1]
 
 plt.figure(figsize=(10, 6))
-plt.scatter(x, y, s=5, alpha=0.8)
-plt.title("Cartographie basée sur la matrice de similarité des 500 plus longs documents")
+plt.scatter(x, y, s=5, alpha=0.9)
+plt.title("Cartographie basée sur la matrice de similarité des 750 plus longs documents")
 
 plt.show()
 
