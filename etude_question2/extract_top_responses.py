@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from pathlib import Path
 
 # Nombre de réponses à extraire
-N = 750
+N = 10000
 
 # Chemin vers le fichier CSV
 csv_path = Path(__file__).resolve().parent.parent / "data" / "donnees" / "cannabis_recreatif.csv"

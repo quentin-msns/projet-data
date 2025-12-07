@@ -45,6 +45,6 @@ df_sql = df[["reponse_lem", "sexe", "age", "profession"]]
 db_path = base_dir / "question2.db"
 engine = create_engine(f"sqlite:///{db_path}")
 
-df_sql.to_sql("lemmatized_texts", engine, if_exists="replace", index=False)
+df_sql.to_sql("classification_texts", engine, if_exists="replace", index=False)
 
 print("Table 'lemmatized_texts' sauvegardée correctement dans question2.db")

@@ -7,8 +7,8 @@ base_dir = Path(__file__).resolve().parent
 db_path = base_dir / "question2.db"
 engine = create_engine(f'sqlite:///{db_path}')
 
-# Charger les réponses depuis la table top_texts
-df = pd.read_sql("SELECT * FROM top_texts", engine)
+# Charger les réponses depuis la table classification_texts
+df = pd.read_sql("SELECT * FROM classification_texts", engine)
 print("Columns in top_texts:", df.columns.tolist())
 # Assuming the first column is the text column
 text_col = df.columns[0]
