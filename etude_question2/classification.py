@@ -10,7 +10,7 @@ engine = create_engine(f'sqlite:///{db_path}')
 # Charger les réponses depuis la table classification_texts
 df = pd.read_sql("SELECT * FROM classification_texts", engine)
 print("Columns in top_texts:", df.columns.tolist())
-# Assuming the first column is the text column
+
 text_col = df.columns[0]
 age_col = 'age' if 'age' in df.columns else df.columns[1]  # Assuming age is the second column
 df = df[[text_col, age_col]].rename(columns={text_col: 'reponse', age_col: 'age'})

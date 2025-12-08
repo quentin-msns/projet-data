@@ -49,17 +49,6 @@ Ce projet contient plusieurs scripts et données pour l'analyse d'un questionnai
 
 ---
 
-## Usage
-
-1. Placer les fichiers CSV bruts dans `data/donnees`.
-2. Exécuter les scripts dans l’ordre souhaité :
-   - Pour lemmatiser : `colonne.py` ou `lemmatisation_globale.py`
-   - Pour analyser les TF-IDF : `tf_idf_global.py` ou `etude_question2/tf_idf.py`
-   - Pour visualiser : `etude_question2/cartographie.py`
-3. Les résultats (CSV, graphiques) seront sauvegardés dans `data/resultats`.
-
----
-
 ## Prérequis
 
 - Python 3.8 ou supérieur
@@ -69,10 +58,16 @@ Ce projet contient plusieurs scripts et données pour l'analyse d'un questionnai
   - `spacy` (`fr_core_news_md` pour le français)
   - `matplotlib` ou `plotly` pour les graphiques
   - `scipy` pour les matrices sparse
+  - ` sqlalchemy` pour la base SQL
+  - ` PathLib` pour gérer les chemins relatif
+  - `unicode` pour décoder l'utf8
 - Installer le modèle français spaCy si nécessaire :
 ```bash
 python -m spacy download fr_core_news_md
 ```
+## Usage
+Pour afficher les analyses, clustering... allez dans le fichier dedié par exemple analyse_pca.py et executer le.
+
 ## Notes
 
 Les scripts appliquent un nettoyage préalable des textes : suppression des chiffres, mots courts et caractères spéciaux.
