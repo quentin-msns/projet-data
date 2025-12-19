@@ -8,12 +8,12 @@ import umap
 import networkx as nx
 import plotly.graph_objects as go
 
-# =============== PARAMÈTRES ===============
+
 k = 5         # nombre de voisins dans le graphe
 n_top_words = 5
 n = 750      # nombre de lignes utilisées
 
-# =============== CHARGEMENT MATRICE ===============
+
 base_dir = Path(__file__).resolve().parent
 db_path = base_dir / "question2.db"
 engine = create_engine(f'sqlite:///{db_path}')
@@ -25,16 +25,12 @@ M = sparse.csr_matrix(
     shape=(n, n)
 )
 
-# matrice de distances
 D = 1 - M.toarray()
 
-
-# =============== UMAP ===============
 um = umap.UMAP(metric="precomputed", n_neighbors=15, min_dist=0.1, random_state=42)
 coords = um.fit_transform(D)
 
 
-# =============== Chargement données textuelles ===============
 df_text = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
 
 # on garde les 750 plus longs si nécessaire
@@ -42,7 +38,7 @@ col_text = df_text.columns[0]
 df_text["word_count"] = df_text[col_text].astype(str).str.split().apply(len)
 df_text = df_text.sort_values("word_count", ascending=False).head(n).reset_index(drop=True)
 
-# =============== Extraction des top N mots les plus fréquents ===============
+
 def top_words(text, n=5):
     if not isinstance(text, str):
         return ""
@@ -53,7 +49,6 @@ def top_words(text, n=5):
 df_text["top_words"] = df_text[col_text].apply(lambda t: top_words(t, n_top_words))
 
 
-# =============== Construction du graphe k-NN ===============
 nbrs = NearestNeighbors(n_neighbors=k, metric="precomputed")
 nbrs.fit(D)
 
@@ -65,8 +60,6 @@ for i in range(n):
         if i != j:
             G.add_edge(i, j)
 
-
-# =============== Préparation des arêtes pour Plotly ===============
 edge_x = []
 edge_y = []
 
@@ -82,7 +75,6 @@ edge_trace = go.Scatter(
 )
 
 
-# =============== Préparation des noeuds ===============
 hover_text = [
     f"<b>Top mots :</b> {df_text.loc[i, 'top_words']}<br>"
     for i in range(n)
@@ -96,8 +88,6 @@ node_trace = go.Scatter(
     text=hover_text
 )
 
-
-# =============== PLOT FINAL ===============
 fig = go.Figure(data=[edge_trace, node_trace])
 fig.update_layout(
     title="Graphe k-NN avec UMAP + Top 5 mots les plus fréquents",

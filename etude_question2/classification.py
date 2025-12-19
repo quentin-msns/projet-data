@@ -12,9 +12,9 @@ df = pd.read_sql("SELECT * FROM classification_texts", engine)
 print("Columns in top_texts:", df.columns.tolist())
 
 text_col = df.columns[0]
-age_col = 'age' if 'age' in df.columns else df.columns[1]  # Assuming age is the second column
+age_col = 'age' if 'age' in df.columns else df.columns[1] 
 df = df[[text_col, age_col]].rename(columns={text_col: 'reponse', age_col: 'age'})
-# Remove rows where age is None or empty
+
 df = df[df['age'].notna() & (df['age'] != '')]
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -25,7 +25,6 @@ X = vectorizer.fit_transform(df["reponse"])
 def parse_age(age_str):
     if age_str is None:
         return 0
-    # Extract the first number from the string, e.g., '30 à 39 ans' -> 30
     import re
     match = re.search(r'\d+', age_str)
     return int(match.group()) if match else 0

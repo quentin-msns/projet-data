@@ -23,10 +23,8 @@ for i in range(vecs.shape[1]):
     if vecs[0, i] < 0:       # si la première valeur du vecteur propre est négative
         vecs[:, i] *= -1     # on change le signe (flip)
 
-# Coords projetées
 coords = vecs[:, :2] * np.sqrt(vals[:2])
 
-# Charger le DataFrame des textes depuis la base de données (top 500 avec démographiques)
 df_lemmatized = pd.read_sql("SELECT * FROM lemmatized_texts", engine)
 col_name = df_lemmatized.columns[0]
 df_lemmatized['word_count'] = df_lemmatized[col_name].astype(str).str.split().apply(len)
@@ -34,7 +32,6 @@ df_sorted = df_lemmatized.sort_values(by='word_count', ascending=False)
 df_top500 = df_sorted.head(n).copy()
 df_top500.drop(columns=['word_count'], inplace=True)
 
-# Option : récupérer les 5 mots les plus fréquents pour chaque ligne
 def top_words(text, n=5):
     if not isinstance(text, str):
         return ""

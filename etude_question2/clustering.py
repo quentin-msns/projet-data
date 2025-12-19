@@ -16,7 +16,6 @@ df_top = pd.read_sql("SELECT * FROM top_texts", engine)
 col_name = df_top.columns[0]
 corpus = df_top[col_name].astype(str).tolist()
 
-# Charger les composantes PCA depuis analyse_pca.py (vecteurs propres)
 from scipy import sparse
 df_matrix = pd.read_sql("SELECT * FROM similarity_matrix", engine)
 M = sparse.csr_matrix((df_matrix['value'], (df_matrix['row'], df_matrix['col'])), shape=(750, 750))
@@ -25,28 +24,25 @@ vals, vecs = eigsh(M, k=2, which='LM')
 x = vecs[:, 0]
 y = vecs[:, 1]
 
-# Prepare PCA data for clustering
+
 X_pca = np.column_stack((x, y))
 
-# Custom K-Means implementation
 def kmeans_custom(X, k, random_state=42):
     np.random.seed(random_state)
     n_samples, n_features = X.shape
-    # Initialize centroids by randomly selecting k points
+
     centroids_indices = np.random.choice(n_samples, k, replace=False)
     centroids = X[centroids_indices].copy()
     
     max_iter = 100
     tol = 1e-4
     for _ in range(max_iter):
-        # Assign each point to the closest centroid
+
         distances = np.linalg.norm(X[:, np.newaxis] - centroids, axis=2)
         clusters = np.argmin(distances, axis=1)
-        
-        # Update centroids
+
         new_centroids = np.array([X[clusters == i].mean(axis=0) for i in range(k)])
-        
-        # Check for convergence
+  
         if np.all(np.linalg.norm(new_centroids - centroids, axis=1) < tol):
             break
         centroids = new_centroids

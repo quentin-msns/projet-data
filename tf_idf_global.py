@@ -52,10 +52,10 @@ print("Nombre de lignes :", nb_lignes)
 
 
 #paramètres
-n = nb_lignes  # taille de la matrice
-dtype = np.float32  # pour gagner de la place
+n = nb_lignes  
+dtype = np.float32  #
 
-#initialisation : matrice creuse au format COO (très pratique pour construire)
+
 rows = []
 cols = []
 values = []
